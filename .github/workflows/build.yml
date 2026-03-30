@@ -1,0 +1,44 @@
+name: Build Dobby iOS Static Library
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install CMake
+        run: brew install cmake
+
+      - name: Build for iOS (arm64)
+        run: |
+          mkdir build_ios
+          cd build_ios
+
+          cmake ../Dobby \
+            -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
+            -DENABLE_BITCODE=0 \
+            -DBUILD_SHARED_LIBS=OFF
+
+          cmake --build . --config Release
+
+      - name: Collect lib
+        run: |
+          mkdir output
+          find build_ios -name "libdobby.a" -exec cp {} output/ \;
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libdobby-ios
+          path: output/
