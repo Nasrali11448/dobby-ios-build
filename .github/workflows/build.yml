@@ -17,7 +17,7 @@ jobs:
       - name: Install CMake
         run: brew install cmake
 
-      - name: Configure (CMake → Xcode)
+      - name: Configure CMake (Xcode iOS)
         run: |
           mkdir build_ios
           cd build_ios
@@ -29,14 +29,16 @@ jobs:
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
             -DBUILD_SHARED_LIBS=OFF \
-            -DENABLE_BITCODE=OFF \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
-            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=""
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="" \
+            -DPLATFORM=IOS \
+            -DPROCESSOR=arm64
 
       - name: Build
         run: |
           cd build_ios
+
           xcodebuild \
             -project Dobby.xcodeproj \
             -configuration Release \
