@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive
 
@@ -18,21 +18,21 @@ jobs:
         run: brew install cmake
 
       - name: Build for iOS (arm64)
-  run: |
-    mkdir build_ios
-    cd build_ios
+        run: |
+          mkdir build_ios
+          cd build_ios
 
-    cmake ../Dobby \
-      -G Xcode \
-      -DCMAKE_SYSTEM_NAME=iOS \
-      -DCMAKE_OSX_SYSROOT=iphoneos \
-      -DCMAKE_OSX_ARCHITECTURES=arm64 \
-      -DCMAKE_SYSTEM_PROCESSOR=arm64 \
-      -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
-      -DENABLE_BITCODE=0 \
-      -DBUILD_SHARED_LIBS=OFF
+          cmake ../Dobby \
+            -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
+            -DENABLE_BITCODE=0 \
+            -DBUILD_SHARED_LIBS=OFF
 
-    cmake --build . --config Release
+          cmake --build . --config Release
 
       - name: Collect lib
         run: |
@@ -40,7 +40,4 @@ jobs:
           find build_ios -name "libdobby.a" -exec cp {} output/ \;
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: libdobby-ios
-          path: output/
+        uses: actions/upload-art
