@@ -17,10 +17,13 @@ jobs:
       - name: Install CMake
         run: brew install cmake
 
-      - name: Configure CMake (Xcode iOS)
+      - name: Configure
         run: |
           mkdir build_ios
           cd build_ios
+
+          export PROCESSOR=arm64
+          export PLATFORM=IOS
 
           cmake ../Dobby \
             -G Xcode \
@@ -31,9 +34,7 @@ jobs:
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
-            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="" \
-            -DPLATFORM=IOS \
-            -DPROCESSOR=arm64
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=""
 
       - name: Build
         run: |
@@ -48,12 +49,12 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY=""
 
-      - name: Collect lib
+      - name: Collect
         run: |
           mkdir -p output
           find build_ios -name "libdobby.a" -exec cp {} output/ \;
 
-      - name: Upload Artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: libdobby-ios
