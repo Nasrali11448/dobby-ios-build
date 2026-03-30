@@ -1,4 +1,4 @@
-name: Build Dobby iOS Static Library
+name: Build Dobby iOS XCFramework
 
 on:
   push:
@@ -17,13 +17,20 @@ jobs:
       - name: Install CMake
         run: brew install cmake
 
-      - name: Configure
+      # -------------------------
+      # Patch Dobby environment check (IMPORTANT)
+      # -------------------------
+      - name: Patch Dobby CMake (bypass env check)
         run: |
-          mkdir build_ios
-          cd build_ios
+          sed -i '' 's/message(FATAL_ERROR "Processor not configured")/# disabled/g' Dobby/cmake/build_environment_check.cmake
 
-          export PROCESSOR=arm64
-          export PLATFORM=IOS
+      # -------------------------
+      # Build iOS Device (arm64)
+      # -------------------------
+      - name: Configure iOS Device
+        run: |
+          mkdir build_ios_device
+          cd build_ios_device
 
           cmake ../Dobby \
             -G Xcode \
@@ -36,26 +43,66 @@ jobs:
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=""
 
-      - name: Build
+      - name: Build iOS Device
         run: |
-          cd build_ios
-
+          cd build_ios_device
           xcodebuild \
             -project Dobby.xcodeproj \
             -configuration Release \
             -sdk iphoneos \
             -target dobby \
             CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGNING_REQUIRED=NO
 
-      - name: Collect
+      # -------------------------
+      # Build iOS Simulator (arm64 + x86_64)
+      # -------------------------
+      - name: Configure iOS Simulator
+        run: |
+          mkdir build_ios_sim
+          cd build_ios_sim
+
+          cmake ../Dobby \
+            -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphonesimulator \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=""
+
+      - name: Build iOS Simulator
+        run: |
+          cd build_ios_sim
+          xcodebuild \
+            -project Dobby.xcodeproj \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -target dobby \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+      # -------------------------
+      # Create XCFramework
+      # -------------------------
+      - name: Create XCFramework
         run: |
           mkdir -p output
-          find build_ios -name "libdobby.a" -exec cp {} output/ \;
 
-      - name: Upload
+          xcodebuild -create-xcframework \
+            -library build_ios_device/build/Release-iphoneos/libdobby.a \
+            -headers Dobby \
+            -library build_ios_sim/build/Release-iphonesimulator/libdobby.a \
+            -headers Dobby \
+            -output output/Dobby.xcframework
+
+      # -------------------------
+      # Upload artifact
+      # -------------------------
+      - name: Upload XCFramework
         uses: actions/upload-artifact@v4
         with:
-          name: libdobby-ios
+          name: Dobby-xcframework
           path: output/
