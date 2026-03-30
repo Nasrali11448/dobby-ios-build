@@ -17,20 +17,20 @@ jobs:
       - name: Install CMake
         run: brew install cmake
 
-      # 🔴 CRITICAL: hard-disable the failing check
-      - name: Patch Dobby environment check
+      # -------------------------
+      # Patch Dobby environment check (IMPORTANT)
+      # -------------------------
+      - name: Patch Dobby CMake (bypass env check)
         run: |
           sed -i '' 's/message(FATAL_ERROR "Processor not configured")/# disabled/g' Dobby/cmake/build_environment_check.cmake
-          sed -i '' 's/string(no output variable specified)//g' Dobby/cmake/build_environment_check.cmake || true
 
-      # ---------------- DEVICE BUILD ----------------
-      - name: Configure Device
+      # -------------------------
+      # Build iOS Device (arm64)
+      # -------------------------
+      - name: Configure iOS Device
         run: |
           mkdir build_ios_device
           cd build_ios_device
-
-          export PROCESSOR=arm64
-          export PLATFORM=IOS
 
           cmake ../Dobby \
             -G Xcode \
@@ -41,11 +41,9 @@ jobs:
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
-            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="" \
-            -DPROCESSOR=arm64 \
-            -DPLATFORM=IOS
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=""
 
-      - name: Build Device
+      - name: Build iOS Device
         run: |
           cd build_ios_device
           xcodebuild \
@@ -56,14 +54,13 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
-      # ---------------- SIMULATOR BUILD ----------------
-      - name: Configure Simulator
+      # -------------------------
+      # Build iOS Simulator (arm64 + x86_64)
+      # -------------------------
+      - name: Configure iOS Simulator
         run: |
           mkdir build_ios_sim
           cd build_ios_sim
-
-          export PROCESSOR=arm64
-          export PLATFORM=IOS
 
           cmake ../Dobby \
             -G Xcode \
@@ -74,11 +71,9 @@ jobs:
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
-            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="" \
-            -DPROCESSOR=arm64 \
-            -DPLATFORM=IOS
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=""
 
-      - name: Build Simulator
+      - name: Build iOS Simulator
         run: |
           cd build_ios_sim
           xcodebuild \
@@ -89,7 +84,9 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
-      # ---------------- XCFRAMEWORK ----------------
+      # -------------------------
+      # Create XCFramework
+      # -------------------------
       - name: Create XCFramework
         run: |
           mkdir -p output
@@ -101,7 +98,10 @@ jobs:
             -headers Dobby \
             -output output/Dobby.xcframework
 
-      - name: Upload
+      # -------------------------
+      # Upload artifact
+      # -------------------------
+      - name: Upload XCFramework
         uses: actions/upload-artifact@v4
         with:
           name: Dobby-xcframework
